@@ -23,6 +23,8 @@ export class DeviceManager {
 	private readonly cardGenerator: CardGenerator
 
 	private statusString: string
+	private scanIsRunning: boolean = false
+	private scanPending: boolean = false
 
 	constructor(client: CompanionSatelliteClient) {
 		this.client = client
@@ -189,6 +191,8 @@ export class DeviceManager {
 	}
 
 	public registerAll(): void {
+		// TODO - this is a race condition, there could already be some adds in flight
+
 		console.log('registerAll', Array.from(this.devices.keys()))
 		for (const [_, device] of this.devices.entries()) {
 			// If it is already in the process of initialising, core will give us back the same id twice, so we dont need to track it
@@ -207,42 +211,65 @@ export class DeviceManager {
 	}
 
 	public scanDevices(): void {
-		const devices = HID.devices()
-		for (const device of devices) {
-			const sdInfo = getStreamDeckDeviceInfo(device)
-			if (sdInfo && sdInfo.serialNumber) {
-				this.tryAddStreamdeck(sdInfo.path, sdInfo.serialNumber)
-			} else if (
-				device.path &&
-				device.serialNumber &&
-				device.vendorId === Infinitton.VENDOR_ID &&
-				Infinitton.PRODUCT_IDS.includes(device.productId)
-			) {
-				this.tryAddInfinitton(device.path, device.serialNumber)
-			}
+		if (this.scanIsRunning) {
+			this.scanPending = true
+			return
 		}
 
-		XencelabsQuickKeysManagerInstance.openDevicesFromArray(devices).catch((e) => {
-			console.error(`Quick keys scan failed: ${e}`)
-		})
+		this.scanIsRunning = true
+		this.scanPending = false
 
-		listLoupedecks()
-			.then((devs) => {
-				for (const dev of devs) {
-					if (
-						dev.serialNumber &&
-						(dev.model === LoupedeckModelId.LoupedeckLive ||
-							dev.model === LoupedeckModelId.RazerStreamController)
-					) {
-						this.tryAddLoupedeckLive(dev.path, dev.serialNumber, false)
-					} else if (dev.serialNumber && dev.model === LoupedeckModelId.LoupedeckLiveS) {
-						this.tryAddLoupedeckLive(dev.path, dev.serialNumber, true)
+		Promise.allSettled([
+			HID.devicesAsync()
+				.then(async (devices) => {
+					const ps = []
+					for (const device of devices) {
+						const sdInfo = getStreamDeckDeviceInfo(device)
+						if (sdInfo && sdInfo.serialNumber) {
+							ps.push(this.tryAddStreamdeck(sdInfo.path, sdInfo.serialNumber))
+						} else if (
+							device.path &&
+							device.serialNumber &&
+							device.vendorId === Infinitton.VENDOR_ID &&
+							Infinitton.PRODUCT_IDS.includes(device.productId)
+						) {
+							ps.push(this.tryAddInfinitton(device.path, device.serialNumber))
+						}
 					}
-				}
-			})
-			.catch((e) => {
-				console.error(`Loupedeck scan failed: ${e}`)
-			})
+
+					ps.push(XencelabsQuickKeysManagerInstance.openDevicesFromArray(devices))
+
+					await Promise.allSettled(ps)
+				})
+				.catch((e) => {
+					console.error(`HID scan failed: ${e}`)
+				}),
+			listLoupedecks()
+				.then(async (devs) => {
+					const ps = []
+					for (const dev of devs) {
+						if (
+							dev.serialNumber &&
+							(dev.model === LoupedeckModelId.LoupedeckLive ||
+								dev.model === LoupedeckModelId.RazerStreamController)
+						) {
+							ps.push(this.tryAddLoupedeckLive(dev.path, dev.serialNumber, false))
+						} else if (dev.serialNumber && dev.model === LoupedeckModelId.LoupedeckLiveS) {
+							this.tryAddLoupedeckLive(dev.path, dev.serialNumber, true)
+						}
+					}
+					await Promise.allSettled(ps)
+				})
+				.catch((e) => {
+					console.error(`Loupedeck scan failed: ${e}`)
+				}),
+		]).finally(() => {
+			this.scanIsRunning = false
+
+			if (this.scanPending) {
+				this.scanDevices()
+			}
+		})
 	}
 
 	private async tryAddLoupedeckLive(path: string, serial: string, isLiveS: boolean) {
@@ -279,7 +306,7 @@ export class DeviceManager {
 				console.log(`adding new device: ${path}`)
 				console.log(`existing = ${JSON.stringify(Array.from(this.devices.keys()))}`)
 
-				sd = openStreamDeck(path)
+				sd = await openStreamDeck(path)
 				sd.on('error', (e) => {
 					console.error('device error', e)
 					this.cleanupDeviceById(serial)
