@@ -158,6 +158,11 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
+"@julusian/image-rs@^0.1.3":
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/@julusian/image-rs/-/image-rs-0.1.3.tgz#8b29042aa6c58788b583b480bfdb3dc3d73e92a5"
+  integrity sha512-RG5Q7va5ETbIJUu1YeI7fU1kkBQy19HllqOvhNax56Y2WP0nv5cfZpZT0xaZxjBZYokcoilkxZBfRRFGqxrg1Q==
+
 "@julusian/jpeg-turbo@^2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@julusian/jpeg-turbo/-/jpeg-turbo-2.1.0.tgz#9bdb6b40602b8559f38fb0207eff03869a0cc705"
@@ -510,13 +515,6 @@
   version "7.3.13"
   resolved "https://registry.yarnpkg.com/@types/semver/-/semver-7.3.13.tgz#da4bfd73f49bd541d28920ab0e2bf0ee80f71c91"
   integrity sha512-21cFJr9z3g5dW8B0CVI9g2O9beqaThGQ6ZFBqHfwhzLDKUxaqTIy3vnfah/UPkfOiF2pLq+tGz+W8RyCskuslw==
-
-"@types/sharp@^0.31.1":
-  version "0.31.1"
-  resolved "https://registry.yarnpkg.com/@types/sharp/-/sharp-0.31.1.tgz#db768461455dbcf9ff11d69277fd70564483c4df"
-  integrity sha512-5nWwamN9ZFHXaYEincMSuza8nNfOof8nmO+mcI+Agx1uMUk4/pQnNIcix+9rLPXzKrm1pS34+6WRDbDV0Jn7ag==
-  dependencies:
-    "@types/node" "*"
 
 "@types/verror@^1.10.3":
   version "1.10.6"
