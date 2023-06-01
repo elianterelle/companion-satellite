@@ -32,24 +32,10 @@ export class StreamDeckWrapper implements WrappedDevice {
 			this.#queue = new ImageWriteQueue(async (key: number, buffer: Buffer) => {
 				const outputId = this.#queueOutputId
 
-				let newbuffer: Buffer = buffer
-				if (this.#deck.ICON_SIZE !== 72) {
-					// scale if necessary
-					try {
-						newbuffer = await sharp(buffer, { raw: { width: 72, height: 72, channels: 3 } })
-							.resize(this.#deck.ICON_SIZE, this.#deck.ICON_SIZE)
-							.raw()
-							.toBuffer()
-					} catch (e) {
-						console.log(`device(${deviceId}): scale image failed: ${e}`)
-						return
-					}
-				}
-
 				// Check if generated image is still valid
 				if (this.#queueOutputId === outputId) {
 					try {
-						await this.#deck.fillKeyBuffer(key, newbuffer)
+						await this.#deck.fillKeyBuffer(key, buffer)
 					} catch (e_1) {
 						console.error(`device(${deviceId}): fillImage failed: ${e_1}`)
 					}
@@ -98,6 +84,8 @@ export class StreamDeckWrapper implements WrappedDevice {
 			bitmaps: this.#deck.ICON_SIZE !== 0,
 			colours: false,
 			text: false,
+			scaleX: this.#deck.ICON_SIZE,
+			scaleY: this.#deck.ICON_SIZE
 		}
 
 		if (this.#deck.MODEL === DeviceModelId.PLUS) {

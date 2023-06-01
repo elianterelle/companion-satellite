@@ -15,6 +15,8 @@ export interface DeviceRegisterProps {
 	bitmaps: boolean
 	colours: boolean
 	text: boolean
+	scaleX?: number
+	scaleY?: number
 }
 
 export interface WrappedDevice {

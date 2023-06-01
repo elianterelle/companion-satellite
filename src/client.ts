@@ -412,7 +412,7 @@ export class CompanionSatelliteClient extends EventEmitter<CompanionSatelliteCli
 					props.keysTotal
 				} KEYS_PER_ROW=${props.keysPerRow} BITMAPS=${props.bitmaps ? 1 : 0} COLORS=${
 					props.colours ? 1 : 0
-				} TEXT=${props.text ? 1 : 0}\n`
+				} TEXT=${props.text ? 1 : 0} SCALEX=${props.scaleX || 0} SCALEY=${props.scaleY || 0}\n`
 			)
 		}
 	}
